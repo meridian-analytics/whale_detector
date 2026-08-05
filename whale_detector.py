@@ -46,21 +46,21 @@
 # ===================================================================================
 # ===================================================================================
 
-# --- Standard libraries ---
-import re
-import os
-import json
-from datetime import datetime
+# Standard library
 import argparse
+import json
+import os
+import re
+from datetime import datetime
+from multiprocessing import Pool
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
-# --- Third-party libraries ---
+# Third-party packages
 import numpy as np
 import pandas as pd
 from scipy import signal
 from tqdm import tqdm
-from multiprocessing import Pool
 
 # --- MAAD features for acoustic analysis ---
 from maad.features import spectral_entropy, frequency_entropy
