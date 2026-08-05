@@ -52,12 +52,11 @@ The pipeline provides the following capabilities:
   - [Batch Size Configuration](#batch-size-configuration)
   - [Configuration Notes](#configuration-notes)
 - [Data Processing Workflow](#data-processing-workflow)
-- [Repository Structure](#repository-structure)
+- [Recommended Project Layout](#recommended-project-layout)
   - [Directory Overview](#directory-overview)
 - [Quick Start](#quick-start)
-- [Output Format](#output-format)
+- [Output](#output)
 - [Performance Optimization](#performance-optimization)
-- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -487,10 +486,6 @@ Increasing the batch size may improve processing speed on systems with sufficien
 
 Reducing the batch size can reduce memory usage on systems with limited resources.
 
-> **Note**
->
-> The `batch_size` parameter is no longer specified through the command line. It is managed exclusively through `project_config.json`.
-
 ---
 
 # Configuration Notes
@@ -506,53 +501,53 @@ The `whale_detector.py` script processes underwater acoustic recordings through 
 The overall workflow is illustrated below:
 
 ```text
-                              Input WAV Files
-                                    │
-                                    ▼
-                         Load Project Configuration
-                         (project_config.json)
-                                    │
-                                    ▼
-                    Load Spectrogram Configurations
-             (species_spec_config.json & vnd_spec_config.json)
-                                    │
-                                    ▼
-                       Build Signal-Processing Filters
-                                    │
-                 ┌──────────────────┴──────────────────┐
-                 │                                     │
-                 ▼                                     ▼
-          Band-pass / Low-pass              Optional notch filters
-              filtering                    (system self-noise)
-                 │                                     │
-                 └──────────────────┬──────────────────┘
-                                    │
-                                    ▼
-                         Select WAV Files to Process
-                                    │
-                    ┌───────────────┴───────────────┐
-                    │                               │
-                    ▼                               ▼
-          Whale Vocalization Detector       Vessel Noise Detector
-              (ResNet Model)                    (ResNet Model)
-                    │                               │
-                    └───────────────┬───────────────┘
-                                    │
-                                    ▼
-                       Compute Acoustic Indices
-                                    │
-                  ┌────────────────────────────────┐
-                  │ • Sound Pressure Level (SPL)   │
-                  │ • Signal-to-Noise Ratio (SNR)  │
-                  │ • Frequency Entropy (Hf)        │
-                  │ • ECV                          │
-                  └────────────────────────────────┘
-                                    │
-                                    ▼
-                         Merge Detection Results
-                                    │
-                                    ▼
-                           Export CSV Results
+                                         Input WAV Files
+                                                │
+                                                ▼
+                                     Load Project Configuration
+                                        (project_config.json)
+                                                │
+                                                ▼
+                                  Load Spectrogram Configurations
+                          (species_spec_config.json & vnd_spec_config.json)
+                                                │
+                                                ▼
+                                 Build Signal-Processing Filters
+                                                │
+                             ┌──────────────────┴──────────────────┐
+                             │                                     │
+                             ▼                                     ▼
+                    Band-pass / Low-pass                 Optional notch filters
+                         filtering                         (system self-noise)
+                             │                                     │
+                             └──────────────────┬──────────────────┘
+                                                │
+                                                ▼
+                                     Select WAV Files to Process
+                                                │
+                                ┌───────────────┴───────────────┐
+                                │                               │
+                                ▼                               ▼
+                      Whale Vocalization Detector       Vessel Noise Detector
+                          (ResNet Model)                    (ResNet Model)
+                                │                               │
+                                └───────────────┬───────────────┘
+                                                │
+                                                ▼
+                                     Compute Acoustic Indices
+                                                │
+                                ┌────────────────────────────────┐
+                                │ • Sound Pressure Level (SPL)   │
+                                │ • Signal-to-Noise Ratio (SNR)  │
+                                │ • Frequency Entropy (Hf)       │
+                                │ • ECV                          │
+                                └────────────────────────────────┘
+                                                │
+                                                ▼
+                                      Merge Detection Results
+                                                │
+                                                ▼
+                                       Export CSV Results
 ```
 
 ---
@@ -643,9 +638,9 @@ The combined detection results and acoustic indices are exported as CSV files in
 
 ---
 
-# Repository Structure
+# Recommended Project Layout
 
-The recommended project layout is:
+The project layout is flexible and can be customized to suit specific workflows. However, the following structure is recommended to improve organization, maintain clarity, and ensure compatibility with the default configuration and file-loading behavior.
 
 ```text
 whale_detector/
@@ -672,8 +667,7 @@ whale_detector/
 │   └── *.txt                          # Optional list of audio files to process
 │
 ├── output/                            # Detection results and generated files
-│
-└── README.md                          # Project documentation
+|
 ```
 
 ---
@@ -707,7 +701,7 @@ If no file list is provided, all WAV files in the input directory are processed.
 Example:
 
 ```bash
-python whale_detector.py ./data bh
+python whale_detector.py ./data 'bh'
 ```
 
 This command will:
@@ -727,7 +721,7 @@ A subset of recordings can be processed using the `--filelist` option.
 Example:
 
 ```bash
-python whale_detector.py ./data bh --filelist ./wav_file_list.txt
+python whale_detector.py ./data 'bh' --filelist ./data/wav_file_list.txt
 ```
 
 The file list should contain one WAV filename per line:
@@ -740,7 +734,7 @@ recording_003.wav
 
 ---
 
-# Output Format
+# Output
 
 The final detection table contains the following fields:
 
@@ -759,6 +753,8 @@ The final detection table contains the following fields:
 | `SNR` | Signal-to-Noise Ratio |
 | `Hf` | Frequency Entropy |
 | `ECV` | Entropy of the Coefficient of Variation |
+| `overlap` | Temporal overlap duration (seconds) between vessel noise and whale detection segments |
+
 
 ---
 
@@ -785,19 +781,6 @@ One CPU core is reserved for system operations.
 
 ---
 
-# Troubleshooting
-
-## No Detections Produced
-
-Check:
-
-- Model file paths.
-- Detection threshold (`--score_thr`).
-- Spectrogram configuration files.
-- Input audio quality.
-- Audio sampling rate compatibility.
-
----
 
 ## Memory Errors
 
