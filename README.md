@@ -2,61 +2,14 @@
 
 A Python-based acoustic analysis framework for detecting whale vocalizations, vessel noise, and computing acoustic indices from underwater acoustic recordings. The tool combines deep learning–based detection models with traditional acoustic signal-processing methods to support passive acoustic monitoring (PAM) applications.
 
----
+### Features
 
-## Features
+The detector provides the following capabilities:
 
-The pipeline provides the following capabilities:
-
-- 🐋 **Whale vocalization detection**
-  - Deep learning–based classification using trained ResNet models.
-  - Supports multiple species-specific detection models.
-
-- 🚢 **Vessel noise detection**
-  - Deep learning–based vessel noise classification.
-
-- 📊 **Acoustic index computation**
-  - Sound Pressure Level (SPL)
-  - Signal-to-Noise Ratio (SNR)
-  - Frequency Entropy (Hf)
-  - Entropy of the Coefficient of Variation (ECV)
-
-- 🔊 **Signal processing**
-  - Band-pass filtering
-  - Self-noise notch filtering
-  - Acoustic calibration
-
-- ⚡ **Parallel processing**
-  - Multi-core CPU processing using Python multiprocessing.
-  - Configurable batch processing for improved performance.
-
----
-
-# Table of Contents
-
-- [License and Disclaimer](#license-and-disclaimer)
-- [Installation](#installation)
-  - [Requirements](#requirements)
-  - [Install Dependencies](#install-dependencies)
-  - [Required Libraries](#required-libraries)
-    - [Python Standard Libraries](#1-python-standard-libraries)
-    - [Third-Party Libraries](#2-third-party-libraries)
-    - [Acoustic Feature Extraction (MAAD)](#acoustic-feature-extraction-maad)
-    - [Deep Learning and Audio Processing (Ketos)](#deep-learning-and-audio-processing-ketos)
-- [Usage](#usage)
-  - [Positional Arguments](#positional-arguments)
-  - [Optional Arguments](#optional-arguments)
-- [Configuration Files](#configuration-files)
-  - [Project Configuration](#project-configuration)
-  - [Spectrogram Configuration Files](#spectrogram-configuration-files)
-  - [Batch Size Configuration](#batch-size-configuration)
-  - [Configuration Notes](#configuration-notes)
-- [Data Processing Workflow](#data-processing-workflow)
-- [Recommended Project Layout](#recommended-project-layout)
-  - [Directory Overview](#directory-overview)
-- [Quick Start](#quick-start)
-- [Output](#output)
-- [Performance Optimization](#performance-optimization)
+* 🐋 **Whale vocalization detection** – Deep learning–based detection using species-specific ResNet models.
+* 🚢 **Vessel noise detection** – Deep learning–based vessel noise detection.
+* 📊 **Acoustic index computation** – Computes Sound Pressure Level (SPL), Signal-to-Noise Ratio (SNR), Frequency Entropy (Hf), and Entropy of the Coefficient of Variation (ECV).
+* ⚡ **Parallel processing** – Multi-core processing with configurable batch sizes for improved performance.
 
 ---
 
@@ -70,69 +23,31 @@ By using this tool, you acknowledge and accept all risks associated with its use
 
 ---
 
+# Table of Contents
+
+- [Installation](#installation)
+- [Recommended Project Layout](#recommended-project-layout)
+- [Usage](#usage)
+- [Output](#output)
+- [A Note on Performance Optimization](#a-note-on-performance-optimization)
+- [Required Libraries](#required-libraries)
+- [Configuration Files](#configuration-files)
+- [Data Processing Workflow](#data-processing-workflow)
+
+---
+
 # Installation
 
-## Requirements
+The detector requires **Python 3.8** to ensure compatibility with the Ketos packages. It is recommended to install the specified version of Python and create a virtual environment before installing the required packages listed in the requirements.txt file.
 
-The detector requires **Python 3.8** to ensure compatibility with the Ketos packages.
+1. [Download](https://www.python.org/downloads/) and install `Python 3.8.0`
+2.	Install virtualenv (if needed; on UNIX-based systems): `sudo apt install python3-venv` 
+3.	Create a virtual environment: `python3 -m venv myenv` 
+4.	Activate it: `source myenv/bin/activate` on UNIX-based systems OR `myenv\Scripts\activate` on Windows
+5.	Install packages: `pip install -r requirements.txt`
+6.	Deactivate: `deactivate`
 
-The software has been tested with:
-
-- Python 3.8.0
-- Ketos-compatible dependencies listed in `requirements.txt`
-
-Python standard libraries are included with Python and do not require separate installation.
-
----
-
-## Install Dependencies
-
-It is recommended to create a virtual environment before installing the required packages.
-
-### 1. Install Python 3.8
-
-Download and install Python 3.8:
-
-https://www.python.org/downloads/
-
----
-
-### 2. Create a Virtual Environment
-
-#### Linux/macOS
-
-```bash
-python3 -m venv myenv
-source myenv/bin/activate
-```
-
-#### Windows
-
-```bash
-myenv\Scripts\activate
-```
-
----
-
-### 3. Install Required Packages
-
-Install all dependencies listed in `requirements.txt`:
-
-```bash
-pip install -r requirements.txt
-```
-
----
-
-### 4. Deactivate the Virtual Environment
-
-```bash
-deactivate
-```
-
----
-
-## Notes
+#### Notes
 
 - If a virtual environment is not required, install dependencies directly using:
 
@@ -144,12 +59,119 @@ pip install -r requirements.txt
 
 ---
 
-# Required Libraries
+# Recommended Project Layout
 
-## 1. Python Standard Libraries
+The project layout is flexible and can be customized to suit specific workflows. However, the following structure is recommended to improve organization, maintain clarity, and ensure compatibility with the default configuration and file-loading behavior.
 
-The detector uses the following built-in Python libraries:
+```text
+whale_detector/
+│
+├── whale_detector.py                  # Main detector script
+│
+├── model/
+│   ├── vnd_model.kt                   # Vessel noise detection model
+│   ├── bl_model.kt                    # Beluga model
+│   ├── nw_model.kt                    # Narwhal model
+│   ├── bh_model.kt                    # Bowhead model
+│   └── *_model.kt                     # Additional whale models
+│
+├── config/
+│   ├── project_config.json            # Global project configuration
+│   ├── vnd_spec_config.json           # Vessel noise spectrogram configuration
+│   ├── bl_spec_config.json            # Beluga spectrogram configuration
+│   ├── nw_spec_config.json            # Narwhal spectrogram configuration
+│   ├── bh_spec_config.json            # Bowhead spectrogram configuration
+│   └── *_spec_config.json             # Additional spectrogram configurations
+│
+├── data/
+│   ├── *.wav                          # Input audio files
+│   └── *.txt                          # Optional text file listing selected recordings to process
+│
+├── output/                            # Detection results and generated files
+|
+```
 
+#### Note : The file list should contain one WAV filename per line
+
+---
+
+# Usage
+
+Run the detector from the command line:
+
+```bash
+python whale_detector.py <data_path> <species> [options]
+```
+
+#### Positional Arguments
+
+* **`<data_path>`** – Directory containing the input WAV files.
+* **`<species>`** – Target whale species (`bl`: Beluga, `nw`: Narwhal, `bh`: Bowhead).
+
+#### Optional Arguments
+
+| Option                  | Description                                                                                                             | Default                               |
+| :---------------------- | :---------------------------------------------------------------------------------------------------------------------- | :------------------------------------ |
+| **`--filelist`**        | Text file containing the names of WAV files to process. If omitted, all WAV files in the input directory are processed. | All WAV files                         |
+| **`--model_path`**      | Path to the trained whale detection model.                                                                              | `./model/<species>_model.kt`          |
+| **`--vnd_model_path`**  | Path to the trained vessel noise detection model.                                                                       | `./model/vnd_model.kt`                |
+| **`--results_path`**    | Directory for saving detection results.                                                                                 | `./output_<species>_<project_name>/`  |
+| **`--mode`**            | CSV output mode (`w` = overwrite, `a` = append).                                                                        | `a`                                   |
+| **`--project_config`**  | Path to the project configuration file.                                                                                 | `./config/project_config.json`        |
+| **`--spec_config`**     | Path to the whale detector spectrogram configuration file.                                                              | `./config/<species>_spec_config.json` |
+| **`--vnd_spec_config`** | Path to the vessel noise detector spectrogram configuration file.                                                       | `./config/vnd_spec_config.json`       |
+| **`--score_thr`**       | Minimum prediction score required for a detection (0.0–1.0).                                                            | `0.5`                                 |
+
+
+---
+
+# Output
+
+The final detection table contains the following fields:
+
+| Column | Description |
+|--------|-------------|
+| `filename` | Audio filename |
+| `start` | Segment start time (seconds) |
+| `end` | Segment end time (seconds) |
+| `start_time` | Absolute UTC/local timestamp |
+| `end_time` | Absolute UTC/local timestamp |
+| `whale_label` | Whale detection label |
+| `whale_score` | Whale prediction score |
+| `vessel_label` | Vessel noise detection label |
+| `vessel_score` | Vessel prediction score |
+| `SPL` | Sound Pressure Level |
+| `SNR` | Signal-to-Noise Ratio |
+| `Hf` | Frequency Entropy |
+| `ECV` | Entropy of the Coefficient of Variation |
+| `overlap` | Temporal overlap duration (seconds) between vessel noise and whale detection segments |
+
+
+---
+
+# A Note on Performance Optimization
+
+The detector uses multiprocessing to accelerate acoustic index computation. By default, the number of worker processes is set to **CPU cores − 1**, reserving one CPU core for system operations.
+
+The workload assigned to each worker is controlled by the `batch_size` parameter in `config/project_config.json`. Selecting an appropriate batch size can significantly affect both processing speed and memory usage.
+
+**Recommendations:**
+
+- Increase `batch_size` to improve throughput on systems with sufficient RAM.
+- Reduce `batch_size` to lower memory usage on resource-constrained systems.
+- Use SSD storage to improve WAV file loading performance.
+- Use `--filelist` to process only the recordings of interest.
+
+If the detector runs out of memory during processing, reduce the `batch_size` value. Smaller batch sizes reduce memory consumption but may also decrease processing throughput.
+
+---
+
+# Additional Information
+
+
+## Required Libraries
+
+### Python Standard Libraries
 - **`argparse`** – Parses command-line arguments.
 - **`json`** – Reads and writes JSON configuration files.
 - **`os`** – Performs file and directory operations.
@@ -159,207 +181,29 @@ The detector uses the following built-in Python libraries:
 - **`pathlib` (`Path`)** – Provides an object-oriented interface for file system paths.
 - **`typing`** – Provides type hints (`List`, `Optional`, `Tuple`, `Union`) for improved code readability and static analysis.
 
----
-
-## 2. Third-Party Libraries
-
-### Data Processing
+### Third-Party Libraries
 
 - **NumPy (`numpy`)** – Performs numerical computations and array operations.
 - **Pandas (`pandas`)** – Reads, writes, and manipulates tabular data such as CSV files.
-
-### Signal Processing
-
 - **SciPy (`scipy.signal`)** – Provides signal-processing functions, including filtering, spectral analysis, and windowing operations.
-
-### Progress Monitoring
-
 - **`tqdm`** – Displays progress bars during long-running processing tasks.
-
----
-
-## Acoustic Feature Extraction (MAAD)
-
-The detector uses MAAD for acoustic feature extraction:
-
-- **`maad.features.spectral_entropy`**  
-  Computes spectral entropy as an acoustic complexity metric.
-
-- **`maad.features.frequency_entropy`**  
-  Computes frequency entropy to characterize the distribution of spectral energy.
-
-- **`maad.sound.spectral_snr`**  
-  Estimates the spectral signal-to-noise ratio (SNR) of audio recordings.
-
----
-
-## Deep Learning and Audio Processing (Ketos)
-
-The detector uses Ketos libraries for audio representation, model inference, and detection processing.
-
-### Audio Handling
-
-- **`ketos.audio.audio_loader.AudioFrameLoader`**  
-  Loads audio files as sequential frames for processing.
-
-- **`ketos.audio.waveform.Waveform`**  
-  Represents waveform data and provides waveform-processing utilities.
-
-- **`ketos.data_handling.parsing.load_audio_representation`**  
-  Loads audio representation configurations from JSON files.
-
-### Neural Network Inference
-
-- **`ketos.neural_networks.resnet.ResNetInterface`**  
-  Loads and runs ResNet-based deep learning models for whale call detection.
-
-### Detection Utilities
-
-- **`ketos.neural_networks.dev_utils.detection.batch_load_audio_file_data`**  
-  Efficiently loads batches of audio data for model inference.
-
-- **`ketos.neural_networks.dev_utils.detection.filter_by_threshold`**  
-  Filters model predictions using user-defined confidence thresholds.
-
-  # Usage
-
-Run the detector from the command line using:
-
-```bash
-python whale_detector.py <data_path> <species> [options]
-```
-
----
-
-## Positional Arguments
-
-- **`<data_path>`**  
-  Path to the directory containing the input WAV files.
-
-- **`<species>`**  
-  Whale species to detect.
-
-  Supported species:
-
-  | Code | Species |
-  |------|---------|
-  | `bl` | Beluga |
-  | `nw` | Narwhal |
-  | `bh` | Bowhead |
-
----
-
-## Optional Arguments
-
-### Input Data
-
-- **`--filelist`**  
-  Path to a text file containing the names of audio files to process.
-
-  If this option is not specified, all WAV files in the input directory are processed.
-
----
-
-### Deep Learning Models
-
-- **`--model_path`**  
-  Path to the trained whale detection model.
-
-  Default:
-
-  ```text
-  ./model/<species>_model.kt
-  ```
-
-- **`--vnd_model_path`**  
-  Path to the trained vessel noise detection model.
-
-  Default:
-
-  ```text
-  ./model/vnd_model.kt
-  ```
-
----
-
-### Output
-
-- **`--results_path`**  
-  Directory where detection results are saved.
-
-  Default:
-
-  ```text
-  ./output_<species>_<project_name>/
-  ```
-
-- **`--mode`**  
-  CSV output writing mode:
-
-  - `w` – Overwrite the existing output file.
-  - `a` – Append results to the existing output file (default).
-
----
-
-### Configuration Files
-
-- **`--project_config`**  
-  Path to the project configuration JSON file.
-
-  Default:
-
-  ```text
-  ./config/project_config.json
-  ```
-
-- **`--spec_config`**  
-  Path to the whale detector spectrogram configuration file.
-
-  Default:
-
-  ```text
-  ./config/<species>_spec_config.json
-  ```
-
-- **`--vnd_spec_config`**  
-  Path to the vessel noise detector spectrogram configuration file.
-
-  Default:
-
-  ```text
-  ./config/vnd_spec_config.json
-  ```
-
----
-
-### Detection Parameters
-
-- **`--score_thr`**  
-  Minimum prediction score required to classify an audio segment as a detection.
-
-  Range:
-
-  ```text
-  0.0 - 1.0
-  ```
-
-  Default:
-
-  ```text
-  0.5
-  ```
-
----
-
+- **`maad.features.spectral_entropy`** - Computes spectral entropy as an acoustic complexity metric.
+- **`maad.features.frequency_entropy`** - Computes frequency entropy to characterize the distribution of spectral energy.
+- **`maad.sound.spectral_snr`** - Estimates the spectral signal-to-noise ratio (SNR) of audio recordings.
+- **`ketos.audio.audio_loader.AudioFrameLoader`** - Loads audio files as sequential frames for processing.
+- **`ketos.audio.waveform.Waveform`** - Represents waveform data and provides waveform-processing utilities.
+- **`ketos.data_handling.parsing.load_audio_representation`** - Loads audio representation configurations from JSON files.
+- **`ketos.neural_networks.resnet.ResNetInterface`** - Loads and runs ResNet-based deep learning models for whale call detection.
+- **`ketos.neural_networks.dev_utils.detection.batch_load_audio_file_data`** - Efficiently loads batches of audio data for model inference.
+- **`ketos.neural_networks.dev_utils.detection.filter_by_threshold`** - Filters model predictions using user-defined confidence thresholds.
+
+ 
 # Configuration Files
 
 The detector uses two types of configuration files located in the `config/` directory:
 
-1. **Project configuration**
-   - Defines project-specific processing parameters.
-
-2. **Spectrogram configuration**
-   - Defines the audio representation parameters required by the trained deep learning models.
+1. **Project configuration** - Defines project-specific processing parameters.
+2. **Spectrogram configuration** - Defines the audio representation parameters required by the trained deep learning models.
 
 The default configuration files are:
 
@@ -374,9 +218,9 @@ config/
 
 ---
 
-# Project Configuration
+### Project Configuration
 
-The `project_config.json` file defines processing parameters, including:
+The default `project_config.json` file defines processing parameters, including:
 
 - Project name
 - Hydrophone channel number
@@ -386,41 +230,9 @@ The `project_config.json` file defines processing parameters, including:
 - System self-noise frequencies
 - Multiprocessing batch size
 
-Example:
+### Spectrogram Configuration Files
 
-```json
-{
-    "project_name": "Arctic_Project",
-    "channel_number": 1,
-    "hydrophone sensitivity (dB)": -149.7,
-    "detection_window_step": 1.5,
-    "date_position": [0, 7],
-    "time_position": [9, 14],
-    "system_noise_frequencies": [60, 120, 180],
-    "batch_size": 8
-}
-```
-
-By default, the detector loads:
-
-```text
-./config/project_config.json
-```
-
-A different project configuration can be specified using:
-
-```bash
-python whale_detector.py <data_path> <species> \
-    --project_config path/to/project_config.json
-```
-
----
-
-# Spectrogram Configuration Files
-
-The spectrogram configuration files define the audio representation used by the trained neural network models.
-
-For whale detection, the appropriate configuration file is automatically selected based on the selected species.
+The spectrogram configuration files define the audio representation used by the trained neural network models. For whale detection, the appropriate configuration file is automatically selected based on the selected species.
 
 | Species | Configuration File |
 |---------|--------------------|
@@ -434,47 +246,18 @@ The vessel noise detector uses:
 config/vnd_spec_config.json
 ```
 
----
-
-## Spectrogram Parameters
-
-The spectrogram configuration files contain parameters such as:
-
-- Sampling rate
-- Spectrogram window size
-- Window overlap
-- Frequency range
-- Segment duration
-- Spectrogram resolution
-
 > **Important**
 >
 > These parameters must match the values used during model training. Modifying them without retraining the models may reduce detection accuracy or produce invalid results.
 
-Alternative spectrogram configuration files can be supplied using:
-
-```bash
-python whale_detector.py <data_path> <species> \
-    --spec_config path/to/spec_config.json \
-    --vnd_spec_config path/to/vnd_spec_config.json
-```
-
 ---
 
-# Batch Size Configuration
+### Batch Size Configuration
 
 The multiprocessing batch size is controlled through:
 
 ```text
 project_config.json
-```
-
-Example:
-
-```json
-{
-    "batch_size": 8
-}
 ```
 
 The batch size controls the number of WAV files assigned to each worker during:
@@ -486,13 +269,13 @@ Increasing the batch size may improve processing speed on systems with sufficien
 
 Reducing the batch size can reduce memory usage on systems with limited resources.
 
----
-
-# Configuration Notes
+#### Notes
 
 - If no custom configuration paths are provided, the detector automatically loads the default files from the `config/` directory.
 - For most deployments, only `project_config.json` requires modification.
 - Spectrogram configuration files should generally remain unchanged unless new models have been trained using different spectrogram parameters.
+
+---
 
 # Data Processing Workflow
 
@@ -552,9 +335,9 @@ The overall workflow is illustrated below:
 
 ---
 
-## Processing Steps
+### Processing Steps
 
-### 1. Load Configuration Files
+#### 1. Load Configuration Files
 
 The detector:
 
@@ -562,18 +345,16 @@ The detector:
 - Loads the species-specific spectrogram configuration.
 - Loads the vessel noise detector spectrogram configuration.
 
----
 
-### 2. Prepare Signal Processing
+#### 2. Prepare Signal Processing
 
 The detector creates the required signal-processing filters:
 
 - Band-pass or low-pass filters.
 - Optional notch filters to suppress known system self-noise frequencies.
 
----
 
-### 3. Select Input Recordings
+#### 3. Select Input Recordings
 
 Input WAV files are selected using one of the following methods:
 
@@ -583,9 +364,7 @@ Input WAV files are selected using one of the following methods:
 - If `--filelist` is provided:
   - Only the listed recordings are processed.
 
----
-
-### 4. Run Whale Detection
+#### 4. Run Whale Detection
 
 The whale detection pipeline:
 
@@ -595,9 +374,8 @@ The whale detection pipeline:
 4. Generates whale detection events.
 5. Reconstructs absolute timestamps from recording filenames.
 
----
 
-### 5. Run Vessel Noise Detection
+#### 5. Run Vessel Noise Detection
 
 The vessel noise detection pipeline:
 
@@ -605,9 +383,8 @@ The vessel noise detection pipeline:
 2. Applies the detection threshold.
 3. Generates vessel noise detection events.
 
----
 
-### 6. Compute Acoustic Indices
+#### 6. Compute Acoustic Indices
 
 For each processed audio segment, the detector computes:
 
@@ -618,9 +395,8 @@ For each processed audio segment, the detector computes:
 
 Acoustic index computation is parallelized across multiple CPU cores.
 
----
 
-### 7. Merge Results
+#### 7. Merge Results
 
 The detector combines:
 
@@ -630,172 +406,10 @@ The detector combines:
 
 Vessel detections are matched with whale detections based on temporal overlap.
 
----
 
-### 8. Export Results
+#### 8. Export Results
 
 The combined detection results and acoustic indices are exported as CSV files in the specified output directory.
 
----
-
-# Recommended Project Layout
-
-The project layout is flexible and can be customized to suit specific workflows. However, the following structure is recommended to improve organization, maintain clarity, and ensure compatibility with the default configuration and file-loading behavior.
-
-```text
-whale_detector/
-│
-├── whale_detector.py                  # Main detector script
-│
-├── model/
-│   ├── vnd_model.kt                   # Vessel noise detection model
-│   ├── bl_model.kt                    # Beluga model
-│   ├── nw_model.kt                    # Narwhal model
-│   ├── bh_model.kt                    # Bowhead model
-│   └── *_model.kt                     # Additional whale models
-│
-├── config/
-│   ├── project_config.json            # Global project configuration
-│   ├── vnd_spec_config.json           # Vessel noise spectrogram configuration
-│   ├── bl_spec_config.json            # Beluga spectrogram configuration
-│   ├── nw_spec_config.json            # Narwhal spectrogram configuration
-│   ├── bh_spec_config.json            # Bowhead spectrogram configuration
-│   └── *_spec_config.json             # Additional spectrogram configurations
-│
-├── data/
-│   ├── *.wav                          # Input audio files
-│   └── *.txt                          # Optional list of audio files to process
-│
-├── output/                            # Detection results and generated files
-|
-```
-
----
-
-## Directory Overview
-
-- **`whale_detector.py`**
-  - Main entry point for running whale detection.
-
-- **`model/`**
-  - Contains trained Ketos (`.kt`) neural network models.
-
-- **`config/`**
-  - Stores project and spectrogram configuration files.
-
-- **`data/`**
-  - Contains input WAV files.
-  - Optionally contains text files listing selected recordings to process.
-
-- **`output/`**
-  - Stores detection results, logs, and generated files.
-
----
-
-# Quick Start
-
-## Process All WAV Files in a Directory
-
-If no file list is provided, all WAV files in the input directory are processed.
-
-Example:
-
-```bash
-python whale_detector.py ./data 'bh'
-```
-
-This command will:
-
-1. Load all WAV files from `./data`.
-2. Run the Bowhead whale detector.
-3. Run vessel noise detection.
-4. Compute acoustic indices.
-5. Save the combined results.
-
----
-
-## Process Selected WAV Files
-
-A subset of recordings can be processed using the `--filelist` option.
-
-Example:
-
-```bash
-python whale_detector.py ./data 'bh' --filelist ./data/wav_file_list.txt
-```
-
-The file list should contain one WAV filename per line:
-
-```text
-recording_001.wav
-recording_002.wav
-recording_003.wav
-```
-
----
-
-# Output
-
-The final detection table contains the following fields:
-
-| Column | Description |
-|--------|-------------|
-| `filename` | Audio filename |
-| `start` | Segment start time (seconds) |
-| `end` | Segment end time (seconds) |
-| `start_time` | Absolute UTC/local timestamp |
-| `end_time` | Absolute UTC/local timestamp |
-| `whale_label` | Whale detection label |
-| `whale_score` | Whale prediction score |
-| `vessel_label` | Vessel noise detection label |
-| `vessel_score` | Vessel prediction score |
-| `SPL` | Sound Pressure Level |
-| `SNR` | Signal-to-Noise Ratio |
-| `Hf` | Frequency Entropy |
-| `ECV` | Entropy of the Coefficient of Variation |
-| `overlap` | Temporal overlap duration (seconds) between vessel noise and whale detection segments |
 
 
----
-
-# Performance Optimization
-
-The pipeline uses multiprocessing to accelerate acoustic index computation.
-
-The number of workers is automatically determined as:
-
-```text
-number_of_workers = CPU_cores - 1
-```
-
-One CPU core is reserved for system operations.
-
----
-
-## Recommendations for Large Datasets
-
-- Increase `batch_size` if sufficient RAM is available.
-- Reduce `batch_size` on systems with limited memory.
-- Use SSD storage for faster WAV file loading.
-- Use `--filelist` to avoid processing unnecessary recordings.
-
----
-
-
-## Memory Errors
-
-Reduce the batch size in:
-
-```text
-config/project_config.json
-```
-
-Example:
-
-```json
-{
-    "batch_size": 4
-}
-```
-
-A smaller batch size reduces memory consumption during multiprocessing.
