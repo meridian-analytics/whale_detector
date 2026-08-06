@@ -1,0 +1,15 @@
+{
+    "project_name": "CP50",
+    "date_position": [
+        11,
+        16
+    ],
+    "time_position": [
+        17,
+        22
+    ],
+    "channel_number": 0,
+    "hydrophone sensitivity (dB)": -174,
+    "detection_window_step": 1.5,
+    "system_noise_frequencies": []
+}

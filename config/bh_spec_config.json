@@ -1,0 +1,12 @@
+{
+    "duration": "3.0 s",
+    "rate": "2000 Hz",
+    "window": "0.1 s",
+    "step": "0.025 s",
+    "freq_min": "0 Hz",
+    "freq_max": "1000 Hz",
+    "window_func": "hamming",
+    "normalize_wav": "False",
+    "type": "MagSpectrogram",
+    "transforms": []
+}
