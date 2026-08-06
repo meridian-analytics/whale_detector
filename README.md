@@ -30,8 +30,6 @@ By using this tool, you acknowledge and accept all risks associated with its use
 - [Usage](#usage)
 - [Output](#output)
 - [A Note on Performance Optimization](#a-note-on-performance-optimization)
-- [Required Libraries](#required-libraries)
-- [Configuration Files](#configuration-files)
 - [Data Processing Workflow](#data-processing-workflow)
 
 ---
@@ -103,12 +101,12 @@ Run the detector from the command line:
 python whale_detector.py <data_path> <species> [options]
 ```
 
-#### Positional Arguments
+### Positional Arguments
 
 * **`<data_path>`** – Directory containing the input WAV files.
 * **`<species>`** – Target whale species (`bl`: Beluga, `nw`: Narwhal, `bh`: Bowhead).
 
-#### Optional Arguments
+### Optional Arguments
 
 | Option                  | Description                                                                                                             | Default                               |
 | :---------------------- | :---------------------------------------------------------------------------------------------------------------------- | :------------------------------------ |
@@ -122,6 +120,53 @@ python whale_detector.py <data_path> <species> [options]
 | **`--vnd_spec_config`** | Path to the vessel noise detector spectrogram configuration file.                                                       | `./config/vnd_spec_config.json`       |
 | **`--score_thr`**       | Minimum prediction score required for a detection (0.0–1.0).                                                            | `0.5`                                 |
 
+### Type of Configuration Files
+
+The detector uses two types of configuration files located in the `config/` directory:
+
+1. **Project configuration** - Defines project-specific processing parameters.
+2. **Spectrogram configuration** - Defines the audio representation parameters required by the trained deep learning models.
+
+The default configuration files are:
+
+```text
+config/
+├── project_config.json
+├── bl_spec_config.json
+├── nw_spec_config.json
+├── bh_spec_config.json
+└── vnd_spec_config.json
+```
+
+The `project_config.json` file defines processing parameters, including:
+
+- Project name
+- Hydrophone channel number
+- Hydrophone sensitivity
+- Detection window step size
+- Date and time positions in filenames
+- System self-noise frequencies
+- Multiprocessing batch size
+
+The `*_spec_config.json` files define the spectrogram configurations used by the trained neural network models. For whale detection, the appropriate configuration file is automatically selected based on the selected species.
+
+| Species | Configuration File |
+|---------|--------------------|
+| `bl` (Beluga) | `bl_spec_config.json` |
+| `nw` (Narwhal) | `nw_spec_config.json` |
+| `bh` (Bowhead) | `bh_spec_config.json` |
+
+The vessel noise detector uses `vnd_spec_config.json` file.
+
+> **Important**
+>
+> These parameters must match the values used during model training. Modifying them without retraining the models may reduce detection accuracy or produce invalid results.
+
+#### Notes
+
+- If no custom configuration paths are provided, the detector automatically loads the default files from the `config/` directory.
+- For most deployments, only `project_config.json` requires modification.
+- Spectrogram configuration files should generally remain unchanged unless new models have been trained using different spectrogram parameters.
 
 ---
 
@@ -153,127 +198,12 @@ The final detection table contains the following fields:
 
 The detector uses multiprocessing to accelerate acoustic index computation. By default, the number of worker processes is set to **CPU cores − 1**, reserving one CPU core for system operations.
 
-The workload assigned to each worker is controlled by the `batch_size` parameter in `config/project_config.json`. Selecting an appropriate batch size can significantly affect both processing speed and memory usage.
+The workload assigned to each worker is controlled by the `batch_size` parameter in `config/project_config.json`. Selecting an appropriate batch size can significantly affect both processing speed and memory usage 
 
 **Recommendations:**
 
 - Increase `batch_size` to improve throughput on systems with sufficient RAM.
-- Reduce `batch_size` to lower memory usage on resource-constrained systems.
-- Use SSD storage to improve WAV file loading performance.
-- Use `--filelist` to process only the recordings of interest.
-
-If the detector runs out of memory during processing, reduce the `batch_size` value. Smaller batch sizes reduce memory consumption but may also decrease processing throughput.
-
----
-
-# Additional Information
-
-
-## Required Libraries
-
-### Python Standard Libraries
-- **`argparse`** – Parses command-line arguments.
-- **`json`** – Reads and writes JSON configuration files.
-- **`os`** – Performs file and directory operations.
-- **`re`** – Supports regular expression pattern matching and string processing.
-- **`datetime`** – Handles date and time formatting.
-- **`multiprocessing` (`Pool`)** – Enables parallel processing to improve performance.
-- **`pathlib` (`Path`)** – Provides an object-oriented interface for file system paths.
-- **`typing`** – Provides type hints (`List`, `Optional`, `Tuple`, `Union`) for improved code readability and static analysis.
-
-### Third-Party Libraries
-
-- **NumPy (`numpy`)** – Performs numerical computations and array operations.
-- **Pandas (`pandas`)** – Reads, writes, and manipulates tabular data such as CSV files.
-- **SciPy (`scipy.signal`)** – Provides signal-processing functions, including filtering, spectral analysis, and windowing operations.
-- **`tqdm`** – Displays progress bars during long-running processing tasks.
-- **`maad.features.spectral_entropy`** - Computes spectral entropy as an acoustic complexity metric.
-- **`maad.features.frequency_entropy`** - Computes frequency entropy to characterize the distribution of spectral energy.
-- **`maad.sound.spectral_snr`** - Estimates the spectral signal-to-noise ratio (SNR) of audio recordings.
-- **`ketos.audio.audio_loader.AudioFrameLoader`** - Loads audio files as sequential frames for processing.
-- **`ketos.audio.waveform.Waveform`** - Represents waveform data and provides waveform-processing utilities.
-- **`ketos.data_handling.parsing.load_audio_representation`** - Loads audio representation configurations from JSON files.
-- **`ketos.neural_networks.resnet.ResNetInterface`** - Loads and runs ResNet-based deep learning models for whale call detection.
-- **`ketos.neural_networks.dev_utils.detection.batch_load_audio_file_data`** - Efficiently loads batches of audio data for model inference.
-- **`ketos.neural_networks.dev_utils.detection.filter_by_threshold`** - Filters model predictions using user-defined confidence thresholds.
-
- 
-# Configuration Files
-
-The detector uses two types of configuration files located in the `config/` directory:
-
-1. **Project configuration** - Defines project-specific processing parameters.
-2. **Spectrogram configuration** - Defines the audio representation parameters required by the trained deep learning models.
-
-The default configuration files are:
-
-```text
-config/
-├── project_config.json
-├── bl_spec_config.json
-├── nw_spec_config.json
-├── bh_spec_config.json
-└── vnd_spec_config.json
-```
-
----
-
-### Project Configuration
-
-The default `project_config.json` file defines processing parameters, including:
-
-- Project name
-- Hydrophone channel number
-- Hydrophone sensitivity
-- Detection window step size
-- Date and time positions in filenames
-- System self-noise frequencies
-- Multiprocessing batch size
-
-### Spectrogram Configuration Files
-
-The spectrogram configuration files define the audio representation used by the trained neural network models. For whale detection, the appropriate configuration file is automatically selected based on the selected species.
-
-| Species | Configuration File |
-|---------|--------------------|
-| `bl` (Beluga) | `bl_spec_config.json` |
-| `nw` (Narwhal) | `nw_spec_config.json` |
-| `bh` (Bowhead) | `bh_spec_config.json` |
-
-The vessel noise detector uses:
-
-```text
-config/vnd_spec_config.json
-```
-
-> **Important**
->
-> These parameters must match the values used during model training. Modifying them without retraining the models may reduce detection accuracy or produce invalid results.
-
----
-
-### Batch Size Configuration
-
-The multiprocessing batch size is controlled through:
-
-```text
-project_config.json
-```
-
-The batch size controls the number of WAV files assigned to each worker during:
-
-- Acoustic index computation
-- Detection processing
-
-Increasing the batch size may improve processing speed on systems with sufficient memory.
-
-Reducing the batch size can reduce memory usage on systems with limited resources.
-
-#### Notes
-
-- If no custom configuration paths are provided, the detector automatically loads the default files from the `config/` directory.
-- For most deployments, only `project_config.json` requires modification.
-- Spectrogram configuration files should generally remain unchanged unless new models have been trained using different spectrogram parameters.
+- Reduce `batch_size` to lower memory usage on resource-constrained systems. (may decrease processing throughput!)
 
 ---
 
