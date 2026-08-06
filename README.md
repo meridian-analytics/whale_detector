@@ -12,6 +12,12 @@ The detector provides the following capabilities:
 * ⚡ **Parallel processing** – Multi-core processing with configurable batch sizes for improved performance.
 
 ---
+> [!WARNING]
+> **Provided Models Are for Demonstration Only**
+>
+> The included detection models are provided for demonstration and testing purposes only. They have not been fully optimized or validated for operational deployment, and detection performance may be limited. For research or production applications, users should retrain or fine-tune the models using appropriate datasets for their target environment and species.
+
+---
 
 ## Limitation Notice and Practical Considerations!
 1- Time Zone: This tool does not handle time zone changes, so users must account for any time zone differences on their own. 
