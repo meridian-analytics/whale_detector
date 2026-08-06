@@ -13,6 +13,19 @@ The detector provides the following capabilities:
 
 ---
 
+## Limitation Notice and Practical Considerations!
+1- Time Zone: This tool does not handle time zone changes, so users must account for any time zone differences on their own. 
+
+2- The current implementation only supports the following date and time formats in a filename:
+- `YYYYMMDD` or `YYMMDD` (Date)
+- `HHMMSS` or `HHMM` (Time)
+If the filename does not follow one of these formats or is missing, the timestamp will default to January 1st, 1970, at midnight UTC (Unix epoch zero time). On Windows, the timestamp may show an offset depending on the local time zone's difference from UTC (Coordinated Universal Time).
+
+3- Hydrophone Data Format is assumed to be WAV with units in Volts. If the input data use a different unit and/or have been scaled or normalized, the resulting SPL values may not be accurate. Thus, users must account for any unit differences or scaling of the input data via preprocessing.
+
+4- Signal Detrending: Before SPL calculation, a constant detrending (DC filter) is applied to the data. Nonlinear trends are left unchanged, and users are responsible for preprocessing such trends if needed. 
+
+---
 # License and Disclaimer
 
 This tool is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html) (GPLv3).
@@ -135,6 +148,15 @@ The **project configuration** (`project_config.json`) defines project-specific p
 - Date and time positions in filenames
 - System self-noise frequencies
 
+> **Note:** To ensure accurate timestamp extraction from filenames, WAV files must include date and time information in one of the supported formats before running the detector.  
+>
+> The `"date_position"` and `"time_position"` values in `project_config.json` must be adjusted according to the filename format used in your dataset. To define these positions correctly:
+>
+> - Examine the filename format to identify the location of the date and time fields.
+> - Use zero-based indexing to specify the start and end positions of each field.
+> - The date field must be a 6- or 8-digit substring (`YYMMDD` or `YYYYMMDD`).
+> - The time field must be a 4- or 6-digit substring (`HHMM` or `HHMMSS`).
+
 #### 2. Spectrogram Configuration
 
 The **spectrogram configuration** files define the audio representation parameters required by the trained deep learning models.
@@ -150,7 +172,8 @@ For whale detection, the appropriate configuration file is selected automaticall
 The vessel noise detector uses the `vnd_spec_config.json` configuration file.
 > **Important**
 >
-> These parameters must match the values used during model training. Modifying them without retraining the models may reduce detection accuracy or produce invalid results.
+> The spectrogram configuration parameters must match the values used during model training. Modifying them without retraining the models may reduce detection accuracy or produce invalid results.
+> If a frequency limit exceeds the Nyquist frequency, the data will be automatically filtered at the Nyquist frequency. Calculations, such as SPL, will then reflect values only up to the Nyquist frequency.
 
 #### Notes
 
