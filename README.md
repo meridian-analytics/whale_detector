@@ -28,8 +28,8 @@ By using this tool, you acknowledge and accept all risks associated with its use
 - [Installation](#installation)
 - [Recommended Project Layout](#recommended-project-layout)
 - [Usage](#usage)
-- [Output](#output)
 - [A Note on Performance Optimization](#a-note-on-performance-optimization)
+- [Output](#output)
 - [Data Processing Workflow](#data-processing-workflow)
 
 ---
@@ -101,16 +101,17 @@ Run the detector from the command line:
 python whale_detector.py <data_path> <species> [options]
 ```
 
-### Positional Arguments
+### - Positional Arguments
 
 * **`<data_path>`** – Directory containing the input WAV files.
 * **`<species>`** – Target whale species (`bl`: Beluga, `nw`: Narwhal, `bh`: Bowhead).
 
-### Optional Arguments
+### - Optional Arguments
 
 | Option                  | Description                                                                                                             | Default                               |
 | :---------------------- | :---------------------------------------------------------------------------------------------------------------------- | :------------------------------------ |
 | **`--filelist`**        | Text file containing the names of WAV files to process. If omitted, all WAV files in the input directory are processed. | All WAV files                         |
+| **`--batch_size`**      | Number of WAV files assigned to each worker during multiprocessing.                                                     | `4`                                   |
 | **`--model_path`**      | Path to the trained whale detection model.                                                                              | `./model/<species>_model.kt`          |
 | **`--vnd_model_path`**  | Path to the trained vessel noise detection model.                                                                       | `./model/vnd_model.kt`                |
 | **`--results_path`**    | Directory for saving detection results.                                                                                 | `./output_<species>_<project_name>/`  |
@@ -120,25 +121,12 @@ python whale_detector.py <data_path> <species> [options]
 | **`--vnd_spec_config`** | Path to the vessel noise detector spectrogram configuration file.                                                       | `./config/vnd_spec_config.json`       |
 | **`--score_thr`**       | Minimum prediction score required for a detection (0.0–1.0).                                                            | `0.5`                                 |
 
-### Type of Configuration Files
 
 The detector uses two types of configuration files located in the `config/` directory:
 
-1. **Project configuration** - Defines project-specific processing parameters.
-2. **Spectrogram configuration** - Defines the audio representation parameters required by the trained deep learning models.
+#### 1. Project Configuration
 
-The default configuration files are:
-
-```text
-config/
-├── project_config.json
-├── bl_spec_config.json
-├── nw_spec_config.json
-├── bh_spec_config.json
-└── vnd_spec_config.json
-```
-
-The `project_config.json` file defines processing parameters, including:
+The **project configuration** (`project_config.json`) defines project-specific processing parameters, including:
 
 - Project name
 - Hydrophone channel number
@@ -146,9 +134,12 @@ The `project_config.json` file defines processing parameters, including:
 - Detection window step size
 - Date and time positions in filenames
 - System self-noise frequencies
-- Multiprocessing batch size
 
-The `*_spec_config.json` files define the spectrogram configurations used by the trained neural network models. For whale detection, the appropriate configuration file is automatically selected based on the selected species.
+#### 2. Spectrogram Configuration
+
+The **spectrogram configuration** files define the audio representation parameters required by the trained deep learning models.
+
+For whale detection, the appropriate configuration file is selected automatically based on the specified species:
 
 | Species | Configuration File |
 |---------|--------------------|
@@ -156,8 +147,7 @@ The `*_spec_config.json` files define the spectrogram configurations used by the
 | `nw` (Narwhal) | `nw_spec_config.json` |
 | `bh` (Bowhead) | `bh_spec_config.json` |
 
-The vessel noise detector uses `vnd_spec_config.json` file.
-
+The vessel noise detector uses the `vnd_spec_config.json` configuration file.
 > **Important**
 >
 > These parameters must match the values used during model training. Modifying them without retraining the models may reduce detection accuracy or produce invalid results.
@@ -169,6 +159,18 @@ The vessel noise detector uses `vnd_spec_config.json` file.
 - Spectrogram configuration files should generally remain unchanged unless new models have been trained using different spectrogram parameters.
 
 ---
+
+# A Note on Performance Optimization
+
+The detector uses multiprocessing to accelerate acoustic index computation. By default, the number of worker processes is set to **CPU cores − 1**, reserving one CPU core for system operations.
+
+The workload assigned to each worker is controlled by the `batch_size` command-line argument. Selecting an appropriate batch size can significantly affect both processing speed and memory usage.
+
+**Recommendations:**
+
+- Increase `batch_size` to improve throughput on systems with sufficient RAM.
+- Reduce `batch_size` to lower memory usage on resource-constrained systems. (may decrease processing throughput!)
+
 
 # Output
 
@@ -194,24 +196,9 @@ The final detection table contains the following fields:
 
 ---
 
-# A Note on Performance Optimization
-
-The detector uses multiprocessing to accelerate acoustic index computation. By default, the number of worker processes is set to **CPU cores − 1**, reserving one CPU core for system operations.
-
-The workload assigned to each worker is controlled by the `batch_size` parameter in `config/project_config.json`. Selecting an appropriate batch size can significantly affect both processing speed and memory usage 
-
-**Recommendations:**
-
-- Increase `batch_size` to improve throughput on systems with sufficient RAM.
-- Reduce `batch_size` to lower memory usage on resource-constrained systems. (may decrease processing throughput!)
-
----
-
 # Data Processing Workflow
 
-The `whale_detector.py` script processes underwater acoustic recordings through a sequence of signal-processing and deep learning stages.
-
-The overall workflow is illustrated below:
+The `whale_detector.py` script processes underwater acoustic recordings through a sequence of signal-processing and deep learning stages. The overall workflow is illustrated below:
 
 ```text
                                          Input WAV Files
@@ -263,83 +250,54 @@ The overall workflow is illustrated below:
                                        Export CSV Results
 ```
 
----
 
-### Processing Steps
+Processing steps include:
 
-#### 1. Load Configuration Files
-
-The detector:
-
+1. Load Configuration Files
 - Loads the project configuration file (`project_config.json`).
 - Loads the species-specific spectrogram configuration.
 - Loads the vessel noise detector spectrogram configuration.
 
 
-#### 2. Prepare Signal Processing
-
-The detector creates the required signal-processing filters:
-
-- Band-pass or low-pass filters.
-- Optional notch filters to suppress known system self-noise frequencies.
+2. Prepare Signal Processing
+- Creates band-pass or low-pass filters.
+- Creates optional notch filters to suppress known system self-noise frequencies.
 
 
-#### 3. Select Input Recordings
-
-Input WAV files are selected using one of the following methods:
-
+3. Select Input Recordings
 - If `--filelist` is not provided:
   - All WAV files in the input directory are processed.
 
 - If `--filelist` is provided:
   - Only the listed recordings are processed.
 
-#### 4. Run Whale Detection
+4. Run Whale Detection
+- Generates spectrograms from audio recordings.
+- Performs batch inference using the trained ResNet model.
+- Applies the user-defined score threshold.
+- Generates whale detection events.
+- Reconstructs absolute timestamps from recording filenames.
 
-The whale detection pipeline:
+5. Run Vessel Noise Detection
+- Processes recordings using the vessel noise ResNet model.
+- Applies the detection threshold.
+- Generates vessel noise detection events.
 
-1. Generates spectrograms from audio recordings.
-2. Performs batch inference using the trained ResNet model.
-3. Applies the user-defined score threshold.
-4. Generates whale detection events.
-5. Reconstructs absolute timestamps from recording filenames.
-
-
-#### 5. Run Vessel Noise Detection
-
-The vessel noise detection pipeline:
-
-1. Processes recordings using the vessel noise ResNet model.
-2. Applies the detection threshold.
-3. Generates vessel noise detection events.
-
-
-#### 6. Compute Acoustic Indices
-
-For each processed audio segment, the detector computes:
-
+6. Compute Acoustic Indices (parallelized across multiple CPU cores)
 - Sound Pressure Level (SPL)
 - Signal-to-Noise Ratio (SNR)
 - Frequency Entropy (Hf)
 - Entropy of the Coefficient of Variation (ECV)
 
-Acoustic index computation is parallelized across multiple CPU cores.
 
-
-#### 7. Merge Results
-
-The detector combines:
-
+7. Merge Results (based on temporal overlap)
 - Whale detections
 - Vessel noise detections
 - Acoustic indices
 
-Vessel detections are matched with whale detections based on temporal overlap.
 
+8. Export Results (as CSV files in the specified output directory)
 
-#### 8. Export Results
-
-The combined detection results and acoustic indices are exported as CSV files in the specified output directory.
 
 
 
