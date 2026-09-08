@@ -32,6 +32,14 @@ If the filename does not follow one of these formats or is missing, the timestam
 4- Signal Detrending: Before SPL calculation, a constant detrending (DC filter) is applied to the data. Nonlinear trends are left unchanged, and users are responsible for preprocessing such trends if needed. 
 
 ---
+
+# Author
+
+**Farid Jedari-Eyvazi, PhD**
+
+Senior Data Scientist / Machine Learning Engineer
+
+---
 # License and Disclaimer
 
 This tool is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html) (GPLv3).
